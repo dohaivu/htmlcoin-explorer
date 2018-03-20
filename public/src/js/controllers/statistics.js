@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.statistics').controller('StatisticsController',
-function($scope, $routeParams, Statistics, StatisticsByDaysTransactions, StatisticsByDaysOutputs, StatisticsByDaysFees, StatisticsByDaysDifficulty, StatisticsByDaysStakes, Statistics24Hours, MarketPrice, gettextCatalog, $filter, Constants, StatisticChart) {
+function($scope, $routeParams, Statistics, StatisticsByDaysTransactions, StatisticsByDaysOutputs, StatisticsByDaysFees, StatisticsByDaysDifficulty, StatisticsByDaysStakes, Statistics24Hours, gettextCatalog, $filter, Constants, StatisticChart, MarketsInfo) {
 
 	var self = this,
 		factories = {
@@ -29,7 +29,7 @@ function($scope, $routeParams, Statistics, StatisticsByDaysTransactions, Statist
 
 		self.chartText = {
 			fees: gettextCatalog.getString('The total value of all transaction fees paid to miners (not including the coinbase value of block rewards).'),
-			transactions: gettextCatalog.getString('The number of daily confirmed Bitcoin transactions.'),
+			transactions: gettextCatalog.getString('The number of daily confirmed HTML transactions.'),
 			outputs: gettextCatalog.getString('The total value of all transaction outputs per day (includes coins returned to the sender as change).'),
 			difficulty: gettextCatalog.getString('A relative measure of how difficult it is to find a new block. The difficulty is adjusted periodically as a function of how much hashing power has been deployed by the network of miners.'),
 			stakes: gettextCatalog.getString('')
@@ -66,10 +66,12 @@ function($scope, $routeParams, Statistics, StatisticsByDaysTransactions, Statist
 			self.statsTotal24 = response;
 		});
 
-		MarketPrice.get(function(marketResponse) {
-			
-			self.marketPrice = marketResponse.USD;
-		});		
+        MarketsInfo.get({}, function(response) {
+            if (response && response.price_usd) {
+                self.marketPrice = response.price_usd;
+            }
+        });
+
 	};
 });
 

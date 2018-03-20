@@ -12,15 +12,20 @@ function($routeParams, $rootScope, $location, ERC20ContractInfo, ERC20Transfers,
 
 	}
 
-    if (Web3Utils.isAddress($routeParams.address)) {
+    var contractEthAddress = $routeParams.address;
 
-        var addrStr = Contracts.getBitAddressFromContractAddress($routeParams.address);
 
-        $location.path('/token/' + addrStr).replace();
+    if (!Web3Utils.isAddress(contractEthAddress)) {
+
+        contractEthAddress = Contracts.getEthAddressFromBitAddress($routeParams.address);
+
+        $location.path('/token/' + contractEthAddress).replace();
 
         return false;
 
     }
+
+    var contractBase58Address = Contracts.getBitAddressFromContractAddress($routeParams.address);
 
 	var self = this;
 	var BALANCE_OF_METHOD_HASH = '70a08231';
@@ -30,7 +35,20 @@ function($routeParams, $rootScope, $location, ERC20ContractInfo, ERC20Transfers,
 	self.transfers = {};
 	self.holders = {};
 
-    self.filterByAddress = $routeParams.a;
+    self.filterByAddress = null;
+
+    if ($routeParams.a) {
+
+        if (Web3Utils.isAddress($routeParams.a)) {
+            self.filterByAddress = Contracts.getBitAddressFromContractAddress($routeParams.a);
+        }
+
+        if (Contracts.isValidQtumAddress($routeParams.a)) {
+            self.filterByAddress = $routeParams.a;
+        }
+
+    }
+
     self.addressBalance = null;
 
 	self.readSmartContractTab = {
@@ -55,7 +73,7 @@ function($routeParams, $rootScope, $location, ERC20ContractInfo, ERC20Transfers,
 		}
 	};
 
-    var contractEthAddress = Contracts.getEthAddressFromBitAddress($routeParams.address);
+
 
 	self.contractAddress = $routeParams.address;
 
@@ -298,6 +316,52 @@ function($routeParams, $rootScope, $location, ERC20ContractInfo, ERC20Transfers,
             }
 
         });
+
+	};
+
+    /**
+	 * Paginate input
+     *
+     */
+
+
+    self.paginateData = {
+    	transfers: {
+            paginate_has_error: false,
+            paginate_page: ''
+		},
+        holders: {
+            paginate_has_error: false,
+            paginate_page: ''
+        }
+	};
+
+	self.setPaginateError = function (hasError) {
+        self.paginateData[self.tab].paginate_has_error = hasError;
+	};
+
+	self.resetPaginate = function () {
+        self.paginateData[self.tab].paginate_has_error = false;
+        self.paginateData[self.tab].paginate_page = '';
+	};
+
+    self.changePage = function (e) {
+
+        var countPages = self[self.tab].count && self[self.tab].limit ? Math.ceil(self[self.tab].count / self[self.tab].limit) : 0,
+			value = e.target.value;
+
+        if (!/^\d+$/.test(value)) {
+			return self.setPaginateError(true);
+		}
+
+        value = parseInt(e.target.value, 10);
+
+        if (value && !isNaN(value) && countPages >= value) {
+            self.paginate(self[self.tab].limit * (value - 1));
+            this.resetPaginate();
+		} else {
+            self.setPaginateError(true);
+		}
 
 	};
 

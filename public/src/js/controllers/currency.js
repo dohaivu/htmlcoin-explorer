@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.currency').controller('CurrencyController',
-function($scope, $rootScope, Currency, Constants, BigNumber) {
+function($scope, $rootScope, Currency, Constants, BigNumber, $filter) {
 
 	var self = this;
 	
@@ -49,9 +49,11 @@ function($scope, $rootScope, Currency, Constants, BigNumber) {
 				response = value;
 			}
 		// prevent sci notation
-			if (response < 1e-7) response = response.toFixed(8);
+			if (response < 1e-7) {
+				response = response.toFixed(8);
+			}
 
-			return response + ' ' + $rootScope.currency.symbol;
+			return $filter('numeraljs')(response, '0,0[.][00000000]') + ' ' + $rootScope.currency.symbol;
 		}
 		return 'value error';
 	};

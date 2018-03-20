@@ -1,6 +1,6 @@
 <div ng-include src="'views/includes/connection.html'"></div>
-<div class="box" 
-	 ng-controller="IndexController as IC" 
+<div class="box"
+	 ng-controller="IndexController as IC"
 	 ng-init="IC.index()">
 
 
@@ -23,8 +23,8 @@
 				<div class="label">{{ IC.blockchainInfo.supply | numeraljs : '0,0[.][00000000]' }} HTML</div>
 				<div class="labeled" translate>Total Supply</div>
 			</div>
-			<div class="item item-full" ng-if="IC.marketsInfo">
-				<div class="label">{{ IC.marketsInfo.available_supply | numeraljs : '0,0[.][00000000]' }} HTML</div>
+			<div class="item item-full" ng-if="IC.blockchainInfo">
+				<div class="label">{{ (IC.blockchainInfo.supply - 12e6 > 0 ? IC.blockchainInfo.supply - 12e6 : 0) | numeraljs : '0,0[.][00000000]' }} HTML</div>
 				<div class="labeled" translate>Circulating Supply</div>
 			</div>
 			<div class="limiter"></div>
@@ -50,7 +50,7 @@
 					<div class="labeled" translate>Block Height</div>
 				</div>
 				<div class="item">
-					<div class="label">{{ IC.blockchainInfo.reward ? IC.blockchainInfo.reward / 1e8 : 0 }} {{ IC.rewardCurrency }}</div> 
+					<div class="label">{{ IC.blockchainInfo.reward ? IC.blockchainInfo.reward / 1e8 : 0 }} {{ IC.rewardCurrency }}</div>
 					<div class="labeled" translate>Block Reward</div>
 				</div>
 			</div>
@@ -91,14 +91,14 @@
 				</span>
 			</div>
 			<div class="content__listScroll"
-				 ng-scrollbars 
+				 ng-scrollbars
 				 ng-scrollbars-config="IC.scrollConfig">
 				<ul class="list list-blocks">
 					<li class="list__item"
 						ng-repeat='block in IC.blocks'>
 						<a href="block/{{ block.hash }}" class="list-blocks__left">
 							<span class="list__row">
-								{{ 'Block' | translate }} 
+								{{ 'Block' | translate }}
 								{{ block.height }}
 							</span>
 							<span class="list__row fsz-13" am-time-ago="block.time * 1000">
@@ -107,7 +107,7 @@
 						<div class="list-blocks__right">
 							<div class="list__row">
 								<span class="mined__help" translate>Mined by</span>
-								<a class="mark mined__name" 
+								<a class="mark mined__name"
 									  ng-if="block.minedBy" href="address/{{ block.minedBy }}">
 									{{ block.minedBy }}
 								</a>
@@ -158,7 +158,7 @@
 						<div class="list-transactions__left">
 							<div class="list__row">
 								<span class="hash__title" translate>Hash</span>
-								<a href="tx/{{ tx.txid }}" 
+								<a href="tx/{{ tx.txid }}"
 								   class="mark hash__data">
 									{{ tx.txid }}
 								</a>
@@ -201,7 +201,7 @@
 			<h3 class="heading__title" translate>About</h3>
 		</div>
 		<div class="content__body">
-			<p translate>Insight is an <a href="https://insight.is/" target="_blank">open-source HTMLCOIN blockchain explorer</a> with complete REST and websocket APIs that can be used for writing web wallets and other apps that need more advanced blockchain queries than provided by htmlcoind RPC. Check out the <a href="https://github.com/bitpay/insight-ui" target="_blank" class="ng-scope">source code</a>.
+			<p translate>Insight is an <a href="https://insight.is/" target="_blank">open-source Quantum blockchain explorer</a> with complete REST and websocket APIs that can be used for writing web wallets and other apps that need more advanced blockchain queries than provided by quantumd RPC. Check out the <a href="https://github.com/bitpay/insight-ui" target="_blank" class="ng-scope">source code</a>.
 			</p>
 			<p translate>Insight is still in development, so be sure to report any bugs and provide feedback for improvement at our <a href="https://github.com/bitpay/insight-ui/issues" target="_blank" class="ng-scope">github issue tracker</a>.
 			</p>

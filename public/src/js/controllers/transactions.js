@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.transactions').controller('TransactionsController',
-function($scope, $rootScope, $routeParams, $location, Transaction, TransactionsByBlock, TransactionsByAddress, Contracts, $q, ERC20ContractInfo) {
+function($scope, $rootScope, $routeParams, $location, Transaction, TransactionsByBlock, TransactionsByAddress, Contracts, $q, ERC20ContractInfo, Web3Utils) {
 
 	var self = this;
 	var pageNum = 0;
@@ -126,12 +126,49 @@ function($scope, $rootScope, $routeParams, $location, Transaction, TransactionsB
 		return null;
 	};
 
+	var contractsInfoCache = {};
+
+    var addEvent = function(tx, logItem) {
+
+    	return $q(function (resolve) {
+
+            if (!contractsInfoCache[logItem.address]) {
+                contractsInfoCache[logItem.address] = ERC20ContractInfo.get({
+                    contractAddress: logItem.address
+                });
+            }
+
+            contractsInfoCache[logItem.address].$promise.then(function (data) {
+
+            	if (data && data.contract_address) {
+                    var addressFrom = logItem.topics[1],
+                        addressTo = logItem.topics[2],
+                        amount = parseInt(logItem.data, 16);
+
+                    var tokenEvent = {
+                        addressFrom: Contracts.getBitAddressFromContractAddress(addressFrom.slice(addressFrom.length - 40, addressFrom.length)),
+                        addressTo: Contracts.getBitAddressFromContractAddress(addressTo.slice(addressTo.length - 40, addressTo.length)),
+                        amount: amount,
+                        contractInfo: data
+                    };
+
+                    tx.tokenEvents.push(tokenEvent);
+				}
+
+                return resolve();
+
+            }).catch(function () {
+                return resolve();
+			});
+
+		});
+    	
+    };
+
 	var asyncProcessERC20TX = function(tx) {
 
-		var deferred = $q.defer();
-
-		var isTransferEvent = false;
-		var receiptItemQRC20 = false;
+		var deferred = $q.defer(),
+        	tokenPromises = [];
 
 		tx.tokenEvents = [];
 
@@ -148,38 +185,21 @@ function($scope, $rootScope, $routeParams, $location, Transaction, TransactionsB
 
 						if (logItem && logItem.topics && logItem.topics.length === 3 && logItem.topics[0] === 'ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef') {
 
-							var addressFrom = logItem.topics[1];
-							var addressTo = logItem.topics[2];
+                            tokenPromises.push(addEvent(tx, logItem));
 
-							isTransferEvent = true;
-
-							tx.tokenEvents.push({
-								addressFrom: Contracts.getBitAddressFromContractAddress(addressFrom.slice(addressFrom.length - 40, addressFrom.length)),
-								addressTo: Contracts.getBitAddressFromContractAddress(addressTo.slice(addressTo.length - 40, addressTo.length)),
-								amount: parseInt(logItem.data, 16)
-							});
 						}
 					}
 				}
 
-				if (isTransferEvent) {
-					receiptItemQRC20 = receiptItem;
-				}
 			}
 		}
 
-		if (isTransferEvent) {
-			ERC20ContractInfo.get({
-				contractAddress: receiptItemQRC20.contractAddress
-			}).$promise.then(function (data) {
-				tx.erc20ContractInfo = data;
-				deferred.resolve(tx);
-			});
-		} else {
-			deferred.resolve(tx);
-		}
+        $q.all(tokenPromises).then(function () {
+            deferred.resolve(tx);
+		});
 
 		return deferred.promise;
+
 	};
 
 	var _processTX = function(tx) {
@@ -231,8 +251,15 @@ function($scope, $rootScope, $routeParams, $location, Transaction, TransactionsB
 	};
 
 	var _byAddress = function () {
+
+		var address = $routeParams.addrStr;
+
+		if (Web3Utils.isAddress(address)) {
+            address = Contracts.getBitAddressFromContractAddress(address)
+		}
+
 		TransactionsByAddress.get({
-			address: $routeParams.addrStr,
+			address: address,
 			pageNum: pageNum
 		}, function(data) {
 			_paginate(data);

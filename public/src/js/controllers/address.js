@@ -1,11 +1,18 @@
 'use strict';
 
 angular.module('insight.address').controller('AddressController',
-function($scope, $rootScope, $document, $routeParams, $location, $window, Address, getSocket, Constants, ContractsInfo, Contracts, ERC20AddressBalances, ERC20ContractInfo) {
+function($scope, $rootScope, $document, $routeParams, $location, $window, Address, getSocket, Constants, ContractsInfo, Contracts, ERC20AddressBalances, ERC20ContractInfo, Web3Utils) {
 
 	var self = this;
 	var socket = getSocket($scope);
 	var addrStr = $routeParams.addrStr;
+
+	self.contractAddress = null;
+
+    if (Web3Utils.isAddress(addrStr)) {
+        self.contractAddress = addrStr;
+        addrStr = Contracts.getBitAddressFromContractAddress(addrStr);
+    }
 
     var hexString = '0000000000000000000000000000000000000000000000000000000000000000';
     self.STORAGE_ROWS = Constants.STORAGE_ROWS;
@@ -62,18 +69,25 @@ function($scope, $rootScope, $document, $routeParams, $location, $window, Addres
 
             case 'string': {
 
-                var newValue = '';
-                var i = hex.substring(0, 2) === '0x' ? 2 : 0;
+                var str = "";
+                var i = 0, l = hex.length;
 
-                for ( ; i < hex.length; i += 2) {
-
-                    var symbol = String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-
-                    symbol = !symbol.charCodeAt() ? ' ' : symbol;
-                    newValue += symbol;
+                if (hex.substring(0, 2) === '0x') {
+                    i = 2;
                 }
 
-                return newValue;
+                for (; i < l; i+=2) {
+
+                    var code = parseInt(hex.substr(i, 2), 16);
+
+                    if (code === 0 && str)
+                        break;
+
+                    str += String.fromCharCode(code);
+                }
+
+                return str;
+                
             }
             case 'number': {
                 return parseInt(hex, 16);
@@ -159,13 +173,13 @@ function($scope, $rootScope, $document, $routeParams, $location, $window, Addres
 
 	self.findOne = function() {
 
-		$rootScope.currentAddr = $routeParams.addrStr;
+		$rootScope.currentAddr = addrStr;
 
 		_startSocket();
 
 
 		ERC20AddressBalances.query({
-            balanceAddress: $routeParams.addrStr
+            balanceAddress: addrStr
         }, function (balances) {
 
 		    if (balances && balances.length) {
@@ -184,7 +198,7 @@ function($scope, $rootScope, $document, $routeParams, $location, $window, Addres
         });
 
 		Address.get({
-			addrStr: $routeParams.addrStr
+			addrStr: addrStr
 		},
 		function(address) {
 
@@ -193,7 +207,7 @@ function($scope, $rootScope, $document, $routeParams, $location, $window, Addres
 
 			self.address = address;
 
-            var ethAddress = Contracts.getEthAddressFromBitAddress($routeParams.addrStr);
+            var ethAddress = Contracts.getEthAddressFromBitAddress(addrStr);
 
             if (ethAddress) {
 
@@ -226,7 +240,7 @@ function($scope, $rootScope, $document, $routeParams, $location, $window, Addres
 
 			if (e.status === 400) {
 
-				$rootScope.flashMessage = 'Invalid Address: ' + $routeParams.addrStr;
+				$rootScope.flashMessage = 'Invalid Address: ' + addrStr;
 			} else if (e.status === 503) {
 
 				$rootScope.flashMessage = 'Backend Error. ' + e.data;

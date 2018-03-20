@@ -66,10 +66,10 @@ angular.module('insight.statistics')
             format: '@format'
         });
     })
-	.factory('MarketPrice', function($resource, $window) {
-		return $resource('https://min-api.cryptocompare.com/data/price?fsym=HTML&tsyms=USD');
-	}).factory('StatisticsBalanceIntervals', function($resource, $window) {
+	.factory('StatisticsBalanceIntervals', function($resource, $window) {
     	return $resource($window.apiPrefix + '/statistics/balance-intervals');
 	}).factory('StatisticsRicherThan', function($resource, $window) {
     	return $resource($window.apiPrefix + '/statistics/richer-than');
+	}).factory('StatisticsRichestList', function($resource, $window) {
+    	return $resource($window.apiPrefix + '/statistics/richest-addresses-list');
 	});
